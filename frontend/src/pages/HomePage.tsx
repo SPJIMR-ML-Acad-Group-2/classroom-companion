@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -14,7 +16,7 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
-import { backendApiUrl } from "@/lib/backendApi";
+// import { backendApiUrl } from "@/lib/backendApi";
 import { supabase } from "@/integrations/supabase/client";
 
 const pillars = [
@@ -49,7 +51,13 @@ const metrics = [
 ];
 
 export default function HomePage() {
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { signInWithGoogle, loading } = useAuth(); // Use loading from auth context
+
+  // Local loading state not needed if we use auth context loading or just await
+  // But useAuth loading is 'initial load' usually.
+  // Let's use local loading for button feedback.
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -62,13 +70,15 @@ export default function HomePage() {
     }
   }, []);
 
-  const authStartUrl = useMemo(() => {
-    return backendApiUrl("/api/auth/google/start");
-  }, []);
-
-  const handleGoogleSignIn = () => {
-    setLoading(true);
-    window.location.href = authStartUrl;
+  const handleGoogleSignIn = async () => {
+    setIsRedirecting(true);
+    await signInWithGoogle();
+    // Navigation handled by PublicOnlyRoute automatically, or we can explicit navigate
+    // PublicOnlyRoute waits for 'user' to be present. 
+    // signInWithGoogle sets user.
+    // So PublicOnlyRoute should trigger.
+    // However, to be safe/explicit:
+    navigate("/dashboard");
   };
 
   return (
@@ -176,10 +186,10 @@ export default function HomePage() {
 
                 <Button
                   onClick={handleGoogleSignIn}
-                  disabled={loading}
+                  disabled={isRedirecting}
                   className="h-12 w-full gap-3 text-base"
                 >
-                  {loading ? (
+                  {isRedirecting ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
                     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
@@ -201,7 +211,7 @@ export default function HomePage() {
                       />
                     </svg>
                   )}
-                  {loading ? "Redirecting to Google..." : "Continue with Google"}
+                  {isRedirecting ? "Redirecting..." : "Continue with Google"}
                 </Button>
 
                 <p className="text-center text-xs text-muted-foreground">

@@ -1,3 +1,4 @@
+import React from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,9 @@ interface Tile {
   icon: React.ElementType;
   roles: AppRole[];
 }
+
+// Icon Mapping
+
 
 const tiles: Tile[] = [
   {
@@ -50,7 +54,7 @@ const tiles: Tile[] = [
 ];
 
 export default function Dashboard() {
-  const { user, role, signOut } = useAuth();
+  const { user, role, signOut, setRole } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -93,6 +97,28 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Role Switcher for Dev/Testing */}
+            <div className="hidden md:flex items-center gap-2 mr-4">
+              <span className="text-xs text-muted-foreground">View as:</span>
+              <select
+                className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                value={role?.toLowerCase() || ""}
+                onChange={(e) => {
+                  const newRole = e.target.value.toUpperCase() as AppRole;
+                  setRole(newRole);
+                }}
+              >
+                <option value="developer">Developer</option>
+                <option value="program_office">Program Office</option>
+                <option value="student">Student</option>
+                <option value="user">User</option>
+                <option value="faculty">Faculty</option>
+                <option value="ta">TA</option>
+                <option value="exam_office">Exam Office</option>
+                <option value="sodoxo_office">Sodoxo</option>
+              </select>
+            </div>
+
             <span className="text-sm text-muted-foreground hidden sm:inline">
               {user?.email}
             </span>

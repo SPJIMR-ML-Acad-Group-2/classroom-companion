@@ -18,6 +18,8 @@ interface AuthContextType {
   role: AppRole | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  setRole: (role: AppRole) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +33,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
+    // MOCK AUTH FOR DEVELOPMENT
+    // This bypasses Supabase Auth to allow UI development without logging in.
+    const mockUser: AuthUser = {
+      id: "mock-user-id",
+      app_metadata: {},
+      user_metadata: { full_name: "Mock Developer", email: "dev@spjimr.org" },
+      aud: "authenticated",
+      created_at: new Date().toISOString(),
+      role: "DEVELOPER"
+    };
+
+    setUser(mockUser);
+    setRole("DEVELOPER");
+    // Create a mock session object
+    const mockSession = {
+      access_token: "mock-token",
+      refresh_token: "mock-refresh-token",
+      expires_in: 3600,
+      token_type: "bearer",
+      user: mockUser
+    } as Session;
+
+    setSession(mockSession);
+    setLoading(false);
+
+    /* Real Auth Logic (Commented out for now)
     // 1. Check active session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (mounted) {
@@ -63,6 +91,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
+    */
+    return () => { mounted = false; };
   }, []);
 
   const fetchProfile = async (currentUser: User) => {
@@ -126,8 +156,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
   };
 
+  const signInWithGoogle = async () => {
+    setLoading(true);
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    const mockUser: AuthUser = {
+      id: "mock-user-id",
+      app_metadata: {},
+      user_metadata: { full_name: "Mock Developer", email: "dev@spjimr.org" },
+      aud: "authenticated",
+      created_at: new Date().toISOString(),
+      role: "DEVELOPER"
+    };
+
+    setUser(mockUser);
+    setRole("DEVELOPER");
+    const mockSession = {
+      access_token: "mock-token",
+      refresh_token: "mock-refresh-token",
+      expires_in: 3600,
+      token_type: "bearer",
+      user: mockUser
+    } as Session;
+    setSession(mockSession);
+    setLoading(false);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, role, loading, signOut }}>
+    <AuthContext.Provider value={{ user, session, role, loading, signOut, signInWithGoogle, setRole }}>
       {children}
     </AuthContext.Provider>
   );
