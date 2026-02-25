@@ -6,70 +6,42 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+/**
+ * Permissive Database type for the frontend Supabase client.
+ *
+ * The live DB has tables from the auto-generated schema (attendance_records, courses, etc.)
+ * PLUS the t1xx/t2xx/t3xx tables created via local migrations.
+ * Since the auto-generated types don't yet reflect all tables, we use a permissive
+ * definition so the client accepts any table name and returns `any` for unknown tables.
+ */
 export type Database = {
+  __InternalSupabase: {
+    PostgrestVersion: "14.1"
+  }
   public: {
     Tables: {
-      t101_application_roles: {
-        Row: {
-          id: number
-          role_name: string
-          description: string | null
-        }
-        Insert: {
-          id?: number
-          role_name: string
-          description?: string | null
-        }
-        Update: {
-          role_name?: string
-          description?: string | null
-        }
-      }
-      t107_user_roles: { // Assuming this links users to roles
-        Row: {
-          id: number
-          user_id: string
-          role_name: string
-          assigned_at?: string
-        }
-        Insert: {
-          id?: number
-          user_id: string
-          role_name: string
-        }
-        Update: {
-          role_name?: string
-        }
-      }
-      t901_access_requests: {
-        Row: {
-          id: number
-          user_id: string
-          full_name: string
-          email: string
-          role_requested: string
-          details: Json // Stores batch, roll_no, spec, etc.
-          status: string // 'PENDING', 'APPROVED', 'REJECTED'
-          submitted_at: string
-          updated_at?: string
-        }
-        Insert: {
-          user_id: string
-          full_name: string
-          email: string
-          role_requested: string
-          details: Json
-          status?: string
-          submitted_at?: string
-        }
-        Update: {
-          status?: string
-          details?: Json
-          updated_at?: string
-        }
-      }
-    }
-  }
-}
-  }
-}
+      [key: string]: {
+        Row: Record<string, any>;
+        Insert: Record<string, any>;
+        Update: Record<string, any>;
+        Relationships?: any[];
+      };
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      [key: string]: {
+        Args: Record<string, any>;
+        Returns: any;
+      };
+    };
+    Enums: {
+      app_role: "student" | "program_office" | "developer" | "user";
+      [key: string]: any;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
+};
