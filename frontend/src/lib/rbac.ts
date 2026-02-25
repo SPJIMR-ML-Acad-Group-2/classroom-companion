@@ -21,7 +21,14 @@ interface RoleSubtileAccessRow {
     route_path: string | null;
     icon_key: string | null;
     is_enabled: boolean;
-  };
+  } | {
+    subtile_key: string;
+    subtile_label: string;
+    subtile_description: string | null;
+    route_path: string | null;
+    icon_key: string | null;
+    is_enabled: boolean;
+  }[];
 }
 
 export function normalizeRoleCode(role: string | null | undefined): string {
@@ -106,13 +113,19 @@ export async function fetchAllowedSubtiles(roleCode: string, tileKey: string): P
     .eq("tile_key", tileKey)
     .eq("can_view", true);
 
-  return ((data as RoleSubtileAccessRow[]) ?? [])
-    .filter((r) => r.t103_dashboard_subtiles?.is_enabled)
-    .map((r) => ({
-      subtile_key: r.t103_dashboard_subtiles.subtile_key,
-      subtile_label: r.t103_dashboard_subtiles.subtile_label,
-      subtile_description: r.t103_dashboard_subtiles.subtile_description,
-      route_path: r.t103_dashboard_subtiles.route_path,
-      icon_key: r.t103_dashboard_subtiles.icon_key,
+  return ((data as unknown as RoleSubtileAccessRow[]) ?? [])
+    .map((r) => {
+      const sub = Array.isArray(r.t103_dashboard_subtiles)
+        ? r.t103_dashboard_subtiles[0]
+        : r.t103_dashboard_subtiles;
+      return sub;
+    })
+    .filter((sub): sub is NonNullable<typeof sub> & { is_enabled: boolean } => !!sub && !!(sub as any).is_enabled)
+    .map((sub: any) => ({
+      subtile_key: sub.subtile_key,
+      subtile_label: sub.subtile_label,
+      subtile_description: sub.subtile_description,
+      route_path: sub.route_path,
+      icon_key: sub.icon_key,
     }));
 }
