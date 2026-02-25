@@ -116,13 +116,32 @@
     @apply border-border;
   }
 
-  body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+  /* ── Global font application ─────────────────────────────────────────────
+     Inter for all body/UI text, Playfair Display for all headings.
+     The `!important` on the html/body root ensures shadcn/radix components
+     that reset font-family inherit correctly instead of falling back to
+     system-ui. Individual pages can still override with font-sans / font-display.
+  ───────────────────────────────────────────────────────────────────────── */
+  html {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-feature-settings: "cv11", "ss01"; /* Inter optical size + alternate digits */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  /* All heading levels → Playfair Display (matches font-display utility) */
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  /* Ensure shadcn inputs, buttons, selects, textareas inherit Inter */
+  input, button, select, textarea, label {
+    font-family: inherit;
   }
 }
 

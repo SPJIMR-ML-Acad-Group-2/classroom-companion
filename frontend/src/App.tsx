@@ -9,9 +9,19 @@ import HomePage from "./pages/HomePage";
 import Dashboard from "./pages/Dashboard";
 import RequestAccess from "./pages/RequestAccess";
 import RequestHistory from "./pages/RequestHistory";
+import ManageBatch from "./pages/ManageBatch";
+import OnboardBatch from "./pages/OnboardBatch";
+import BatchDivisionsPage from "./pages/BatchDivisionsPage";
+import BatchStudentsPage from "./pages/BatchStudentsPage";
+import BatchAcadGroupsPage from "./pages/BatchAcadGroupsPage";
+import ManageCourses from "./pages/ManageCourses";
+import SystemSettings from "./pages/SystemSettings";
+import TimetablePage from "./pages/TimetablePage";
+import AttendanceHubPage from "./pages/AttendanceHubPage";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ModuleRouteGuard from "./components/ModuleRouteGuard";
 
 const queryClient = new QueryClient();
 
@@ -116,6 +126,152 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <RequestHistory />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/batches"
+                element={
+                  <ProtectedRoute>
+                    <ModuleRouteGuard tileKey="manage_batch">
+                      <ManageBatch />
+                    </ModuleRouteGuard>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/onboard-batch"
+                element={
+                  <ProtectedRoute>
+                    <ModuleRouteGuard tileKey="manage_batch" subtileKey="create_batch">
+                      <OnboardBatch />
+                    </ModuleRouteGuard>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/batches/create"
+                element={
+                  <ProtectedRoute>
+                    <ModuleRouteGuard tileKey="manage_batch" subtileKey="create_batch">
+                      <OnboardBatch />
+                    </ModuleRouteGuard>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/batches/divisions"
+                element={
+                  <ProtectedRoute>
+                    <ModuleRouteGuard tileKey="manage_batch" subtileKey="manage_divisions">
+                      <BatchDivisionsPage />
+                    </ModuleRouteGuard>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/batches/students"
+                element={
+                  <ProtectedRoute>
+                    <ModuleRouteGuard tileKey="manage_batch" subtileKey="manage_students">
+                      <BatchStudentsPage />
+                    </ModuleRouteGuard>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/batches/acad-groups"
+                element={
+                  <ProtectedRoute>
+                    <ModuleRouteGuard tileKey="manage_batch" subtileKey="manage_acad_groups">
+                      <BatchAcadGroupsPage />
+                    </ModuleRouteGuard>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/courses"
+                element={
+                  <ProtectedRoute>
+                    <ManageCourses />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/attendance"
+                element={
+                  <ProtectedRoute>
+                    <ModuleRouteGuard tileKey="attendance_hub">
+                      <AttendanceHubPage />
+                    </ModuleRouteGuard>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/attendance/upload"
+                element={
+                  <ProtectedRoute>
+                    <ModuleRouteGuard tileKey="attendance_hub" subtileKey="upload_attendance">
+                      <AttendanceHubPage />
+                    </ModuleRouteGuard>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/attendance/view"
+                element={
+                  <ProtectedRoute>
+                    <ModuleRouteGuard tileKey="attendance_hub" subtileKey="view_attendance">
+                      <AttendanceHubPage />
+                    </ModuleRouteGuard>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/attendance/reports"
+                element={
+                  <ProtectedRoute>
+                    <ModuleRouteGuard tileKey="attendance_hub" subtileKey="attendance_reports">
+                      <AttendanceHubPage />
+                    </ModuleRouteGuard>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/timetable"
+                element={
+                  <ProtectedRoute>
+                    <ModuleRouteGuard tileKey="timetable">
+                      <TimetablePage />
+                    </ModuleRouteGuard>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/timetable/publish"
+                element={
+                  <ProtectedRoute>
+                    <ModuleRouteGuard tileKey="timetable" subtileKey="publish_timetable">
+                      <TimetablePage />
+                    </ModuleRouteGuard>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/timetable/view"
+                element={
+                  <ProtectedRoute>
+                    <ModuleRouteGuard tileKey="timetable" subtileKey="view_timetable">
+                      <TimetablePage />
+                    </ModuleRouteGuard>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <SystemSettings />
                   </ProtectedRoute>
                 }
               />

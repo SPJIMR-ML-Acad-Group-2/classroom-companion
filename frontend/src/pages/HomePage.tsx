@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -18,7 +19,6 @@ import {
   LogIn,
 } from "lucide-react";
 // import { backendApiUrl } from "@/lib/backendApi";
-import { supabase } from "@/integrations/supabase/client";
 
 const pillars = [
   {
@@ -103,12 +103,24 @@ const LoginCard = ({ isRedirecting, handleGoogleSignIn }: { isRedirecting: boole
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const { signInWithGoogle, loading } = useAuth(); // Use loading from auth context
-
-  // Local loading state not needed if we use auth context loading or just await
-  // But useAuth loading is 'initial load' usually.
-  // Let's use local loading for button feedback.
+  const { signInWithGoogle, loading } = useAuth();
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [roles, setRoles] = useState<string[]>([]);
+
+  // Fetch role names from t101_application_roles (no hardcoded fallback)
+  useEffect(() => {
+    supabase
+      .from("t101_application_roles")
+      .select("role_name")
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("[t101_application_roles] fetch error:", error.message);
+        } else {
+          console.log("[t101_application_roles] rows returned:", data);
+          setRoles((data ?? []).map((r: { role_name: string }) => r.role_name));
+        }
+      });
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -132,8 +144,39 @@ export default function HomePage() {
     navigate("/dashboard");
   };
 
+  // Distribute roles evenly across the background
+  const bgPositions = [
+    { top: "5%", left: "2%" },
+    { top: "12%", left: "60%" },
+    { top: "28%", left: "15%" },
+    { top: "38%", left: "80%" },
+    { top: "55%", left: "5%" },
+    { top: "65%", left: "48%" },
+    { top: "78%", left: "72%" },
+    { top: "88%", left: "25%" },
+  ];
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
+      {/* ── Decorative role labels fetched from t101_application_roles ── */}
+      {roles.map((roleName, i) => {
+        const pos = bgPositions[i % bgPositions.length];
+        return (
+          <span
+            key={roleName}
+            className="pointer-events-none absolute select-none font-mono text-xs font-semibold uppercase tracking-widest text-primary/10"
+            style={{
+              top: pos.top,
+              left: pos.left,
+              animationDelay: `${i * 0.4}s`,
+            }}
+            aria-hidden="true"
+          >
+            {roleName}
+          </span>
+        );
+      })}
+
       <div className="pointer-events-none absolute -left-40 top-20 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
       <div className="pointer-events-none absolute right-0 top-0 h-[30rem] w-[30rem] rounded-full bg-accent/25 blur-3xl" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-72 bg-gradient-to-t from-primary/10 to-transparent" />

@@ -1,0 +1,264 @@
+﻿Classroom Companion
+Dashboard Tiles & Role Visibility Specification (Updated as per Latest Requirements)
+
+1. Dashboard Architecture Philosophy
+The system follows asingle-dashboard architecture:
+All users land on the same dashboard layout.
+Tiles are rendered dynamically based on user role.
+No separate dashboards per role.
+Backend enforces access validation.
+Frontend only reflects permissions returned by backend.
+Email ID is the primary identifier.
+Role + permission mapping determines tile visibility and action rights.
+This ensures scalability, modularity, and clean access governance.
+
+2. Stakeholders
+The platform serves the following stakeholders:
+Faculty
+TAs
+Classroom Coordinators
+Students
+Program Office
+Examination Office
+Sodexo Team
+Developer (System Owner)
+
+3. Defined Roles
+Role
+Description
+Developer
+System initializer with full access
+Program Office Admin
+Full academic and access governance control
+Program Office User
+Academic operations user (no access governance)
+Faculty
+Teaching staff (course-level access)
+TA
+Teaching assistant (course-level restricted access)
+Classroom Coordinator
+Course-level operational access
+Examination Office
+Exam scheduling and management access
+Sodexo Team
+Read-only access to scheduled classes
+Student
+Enrolled learner (term-level read access)
+User
+Logged-in SPJIMR ID without assigned role
+
+4. Role-Based Access Philosophy
+Access is determined by:
+Role
+Course mapping
+Batch mapping
+Explicit permission configuration
+Access types:- Read- Write- Approve- Full Control
+Role permissions are not hardcoded in UI.Permissions must be configurable via backend role-permission mapping table.
+
+5. Program Office Dashboard Tiles
+Tile 1: Onboard New Batch
+Purpose:Create and initialize academic batches.
+Capabilities:- Create batch (code, name, program type, start/end date)- Import students via Excel- Add students manually- View ongoing batches- View archived batches
+
+Tile 2: Manage Batches
+Purpose:Structure batches internally.
+Capabilities:- View all batches- Create core divisions- Create specialization divisions- Create ACAD groups- Assign students to divisions- Modify division structure
+
+Tile 3: Manage Courses
+Purpose:Define and configure academic courses.
+Capabilities:- Select batch- Create course (name, code, term, core/specialization)- Assign multiple faculty- Assign multiple divisions- Assign primary & secondary classroom coordinators- Session-wise faculty mapping
+
+Tile 4: Timetable & Workload Management
+A. Timetable
+View divisions
+Filter by batch
+Add class events manually
+Upload timetable via CSV
+Map course, faculty, division, and time
+B. Workload Analytics
+Weekly class count per division
+Faculty workload tracking
+Week-over-week comparison
+
+Tile 5: Attendance Hub
+Purpose:Centralized attendance visibility.
+Views:- Batch-wise- Division-wise- Course-wise- Student-wise
+Capabilities:- Search & filter- Attendance percentage calculation- Low-attendance flagging
+
+Tile 6: Student Concerns Hub
+Purpose:Track student-raised issues.
+Capabilities:- View concerns- Filter by batch/division/status- Update status (Open, In Progress, Resolved)- Add internal comments
+
+Tile 7: Leave Request Hub
+Purpose:Manage academic leave requests.
+Capabilities:- View leave requests- Review dates, purpose, attachments- Approve / Reject- Track status
+
+Tile 8: Change Access (Admin Only)
+Purpose:Role and access governance.
+Capabilities:- View all users- Modify roles- Approve access change requests- Grant/revoke admin privileges- Disable user accounts- Maintain audit trail
+Visible only to:- Developer- Program Office Admin
+
+6. Additional Functional Tiles (Role-Based)
+Faculty / TA Tiles
+My Timetable
+Attendance Marking (only for mapped courses)
+My Workload View
+Limited Attendance Analytics (only for their courses)
+Access Level:Read & Write — restricted to mapped courses.
+
+Classroom Coordinator Tiles
+View all assigned courses
+Manage classroom logistics
+Access timetable for mapped courses
+Access Level:Read & Write for assigned courses.For other courses → treated as Student.
+
+Examination Office Tiles
+Exam Scheduling
+Exam Timetable Upload
+View Exam Analytics
+Access Level:Read & Write only for exam-related modules.
+
+Sodexo Team Tiles
+View Class Schedule (Read-only)
+Access Level:Read-only access to timetable and scheduled sessions.
+
+Student Tiles
+My Attendance
+Raise Concern
+My Leave Requests
+Access Level:Read access to all term courses.Write access to concerns and leave requests.
+
+7. Role Visibility Matrix (High-Level)
+Tile
+Developer
+PO Admin
+PO User
+Faculty
+TA
+Coordinator
+Exam Office
+Sodexo
+Student
+Onboard Batch
+✔
+✔
+✔
+✖
+✖
+✖
+✖
+✖
+✖
+Manage Batches
+✔
+✔
+✔
+✖
+✖
+✖
+✖
+✖
+✖
+Manage Courses
+✔
+✔
+✔
+✖
+✖
+Limited
+✖
+✖
+✖
+Timetable
+✔
+✔
+✔
+Limited
+Limited
+✔
+✔
+Read
+Read
+Workload
+✔
+✔
+✔
+Limited
+Limited
+Limited
+✖
+✖
+✖
+Attendance Hub
+✔
+✔
+✔
+Limited
+Limited
+Limited
+✖
+✖
+Limited
+Student Concerns
+✔
+✔
+✔
+✖
+✖
+✖
+✖
+✖
+Write
+Leave Requests
+✔
+✔
+✔
+✖
+✖
+✖
+✖
+✖
+Write
+Change Access
+✔
+✔
+✖
+✖
+✖
+✖
+✖
+✖
+✖
+
+8. Access Change Workflow
+Users can request role changes.Program Office Admin validates and approves.All changes must:
+Be auditable
+Log previous role
+Log new role
+Log timestamp
+Log approving authority
+
+9. Backend Enforcement Rules
+Role resolved at login.
+Course-level mapping applied for Faculty, TA, Coordinators.
+Tile visibility returned by backend.
+API-level RBAC mandatory.
+No frontend-only role logic.
+Permission changes reflected on next session refresh.
+
+10. Future Extensions
+Full permission matrix table (Role → Feature → Access Type)
+Read/Write/Approve granularity
+Multi-role per user support
+Audit logging system
+Analytics dashboard for governance
+
+11. Implementation Instruction for Coding Assistant
+Build a single dashboard layout.
+Render tiles dynamically based on role.
+Support course-level permission filtering.
+Support exam-only and read-only roles.
+Backend must validate every action.
+No hardcoded permission logic in UI.
+This document defines the updated dashboard, stakeholder roles, and visibility matrix for Classroom Companion.
