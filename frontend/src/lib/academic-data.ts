@@ -32,6 +32,18 @@ export interface CourseOption {
   course_name: string;
 }
 
+export interface TimetableEventOption {
+  event_id: string;
+  batch_id: string;
+  division_id: string | null;
+  course_id: string | null;
+  event_date: string;
+  start_time: string;
+  end_time: string;
+  status: string;
+  is_published: boolean;
+}
+
 export async function fetchBatchOptions(): Promise<BatchOption[]> {
   const { data, error } = await supabase
     .from("t201_batch")
@@ -65,7 +77,6 @@ export async function fetchStudentOptions(batchId: string, divisionId?: string):
   }
 
   const { data, error } = await query;
-
   if (error) throw new Error(error.message);
   return (data ?? []) as StudentOption[];
 }
@@ -79,4 +90,41 @@ export async function fetchCourseOptions(): Promise<CourseOption[]> {
 
   if (error) throw new Error(error.message);
   return (data ?? []) as CourseOption[];
+}
+
+export async function fetchTimetableEvents(
+  batchId: string,
+  divisionId?: string
+): Promise<TimetableEventOption[]> {
+  let query = supabase
+    .from("t211_timetable_event")
+    .select("event_id,batch_id,division_id,course_id,event_date,start_time,end_time,status,is_published")
+    .eq("batch_id", batchId)
+    .order("event_date", { ascending: false })
+    .order("start_time", { ascending: true });
+
+  if (divisionId && divisionId !== "all") {
+    query = query.eq("division_id", divisionId);
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return (data ?? []) as TimetableEventOption[];
+}
+
+export async function fetchAttendanceConfig(): Promise<Record<string, string>> {
+  const { data, error } = await supabase
+    .from("t401_attendance_config")
+    .select("config_key,config_value");
+
+  if (error) {
+    console.warn("Could not load attendance config, using defaults:", error.message);
+    return { grace_minutes: "10", low_attendance_pct: "75" };
+  }
+
+  const result: Record<string, string> = {};
+  for (const row of (data ?? []) as { config_key: string; config_value: string }[]) {
+    result[row.config_key] = row.config_value;
+  }
+  return result;
 }

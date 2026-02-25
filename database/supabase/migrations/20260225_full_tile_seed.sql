@@ -17,7 +17,8 @@ values
   ('request_history',  'Request History',   'View the status of your previous access requests',           '/request-history', 'clock',           20,  true),
 
   -- ── Academic Administration (Program Office) ─────────────
-  ('manage_batch',     'Manage Batch',      'View and manage academic batches and cohorts',               '/batches',         'graduation-cap',  30,  true),
+  ('manage_batch',     'Manage Batch',      'View and manage academic batches and cohorts',               '/managebatch',     'graduation-cap',  30,  true),
+  ('onboard_batch',    'Onboard Batch',     'Create a new batch and enrol students into the programme',   '/onboardbatch',    'user-plus',       31,  true),
   ('manage_courses',   'Manage Courses',    'Configure courses, syllabi, and academic schedules',         '/courses',         'book-open',       40,  true),
   ('manage_faculty',   'Manage Faculty',    'Onboard and manage faculty and teaching assistants',         '/faculty',         'users',           50,  true),
   ('manage_students',  'Manage Students',   'View and manage student profiles across batches',            '/students',        'user-check',      60,  true),
@@ -63,10 +64,9 @@ from public.t102_dashboard_tiles t
 join (values
 
   -- manage_batch subtiles
-  ('manage_batch', 'create_batch',         'Create Batch',       'Create a new academic batch or cohort',             '/batches/create',          'plus',            10),
-  ('manage_batch', 'manage_divisions',     'Manage Divisions',   'Create and configure divisions within a batch',     '/batches/divisions',       'layout-grid',     20),
-  ('manage_batch', 'manage_students',      'Manage Students',    'Onboard and manage students within a batch',        '/batches/students',        'users',           30),
-  ('manage_batch', 'manage_acad_groups',   'Manage Acad Groups', 'Configure academic groups, electives and circles',  '/batches/acad-groups',     'book-open',       40),
+  ('manage_batch', 'manage_divisions',     'Manage Divisions',   'Create and configure divisions within a batch',     '/managebatch/divisions',       'layout-grid',     20),
+  ('manage_batch', 'manage_students',      'Manage Students',    'Onboard and manage students within a batch',        '/managebatch/students',        'users',           30),
+  ('manage_batch', 'manage_acad_groups',   'Manage Acad Groups', 'Configure academic groups, electives and circles',  '/managebatch/acad-groups',     'book-open',       40),
 
   -- manage_courses subtiles
   ('manage_courses', 'create_course',      'Create Course',      'Add a new course to the course catalogue',          '/courses/create',          'plus',            10),

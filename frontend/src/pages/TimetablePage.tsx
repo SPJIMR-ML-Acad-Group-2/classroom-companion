@@ -51,6 +51,7 @@ interface TimetableEvent {
   venue: string | null;
   notes: string | null;
   is_published: boolean;
+  status: string; // scheduled | completed | cancelled
 }
 
 interface TimetableImportRow {
@@ -290,6 +291,7 @@ export default function TimetablePage() {
       venue: form.venue.trim() || null,
       notes: form.notes.trim() || null,
       is_published: false,
+      status: "scheduled",
       created_by: null,
     };
 
@@ -394,6 +396,18 @@ export default function TimetablePage() {
     }
 
     toast.success(isPublished ? "Events published." : "Events moved to draft.");
+    loadEvents(selectedBatchId, selectedDivisionId, activeTab);
+  };
+
+  const cancelFilteredEvents = async () => {
+    if (events.length === 0) { toast.error("No events in filter."); return; }
+    const ids = events.map((e) => e.event_id);
+    const { error } = await supabase
+      .from("t211_timetable_event")
+      .update({ status: "cancelled" } as never)
+      .in("event_id", ids);
+    if (error) { toast.error(`Failed to cancel: ${error.message}`); return; }
+    toast.success("Events marked as cancelled.");
     loadEvents(selectedBatchId, selectedDivisionId, activeTab);
   };
 
@@ -564,6 +578,7 @@ export default function TimetablePage() {
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setPublishStateForFiltered(true)}>Publish Filtered Events</Button>
               <Button variant="outline" onClick={() => setPublishStateForFiltered(false)}>Move Filtered to Draft</Button>
+              <Button variant="destructive" onClick={cancelFilteredEvents}>Cancel Filtered Events</Button>
             </div>
           </TabsContent>
 
@@ -581,6 +596,7 @@ export default function TimetablePage() {
                         <TableHead>Time</TableHead>
                         <TableHead>Division</TableHead>
                         <TableHead>Course</TableHead>
+                        <TableHead>Published</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Venue</TableHead>
                       </TableRow>
@@ -597,6 +613,14 @@ export default function TimetablePage() {
                             <TableCell>{course ? `${course.course_code}` : "-"}</TableCell>
                             <TableCell>
                               <Badge variant={e.is_published ? "default" : "secondary"}>{e.is_published ? "Published" : "Draft"}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={
+                                e.status === "completed" ? "default" :
+                                  e.status === "cancelled" ? "destructive" : "secondary"
+                              }>
+                                {e.status ?? "scheduled"}
+                              </Badge>
                             </TableCell>
                             <TableCell>{e.venue ?? "-"}</TableCell>
                           </TableRow>

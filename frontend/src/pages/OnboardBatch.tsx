@@ -25,6 +25,7 @@ import {
   FileSpreadsheet,
   CheckCircle2,
   Archive,
+  Download,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -41,6 +42,12 @@ interface Batch {
   created_at: string;
 }
 
+interface SpecOption {
+  id: string;
+  spec_code: string;
+  spec_name: string;
+}
+
 const PROGRAMME_HEADS = [
   "Dr Renuka Kamath",
   "Dr Ashitha Agarwal",
@@ -52,6 +59,7 @@ const PROGRAMME_HEADS = [
 
 const PROGRAM_TYPES = ["PGDM", "PGDM-BM", "PGPM", "FPM", "Other"];
 
+// Parse Excel — division column is optional (ignored during onboarding)
 function parseBatchExcel(file: File): Promise<StudentImportRow[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -68,11 +76,12 @@ function parseBatchExcel(file: File): Promise<StudentImportRow[]> {
           first_name: String(r["First Name"] ?? r["first_name"] ?? "").trim(),
           last_name: String(r["Last Name"] ?? r["last_name"] ?? "").trim(),
           email: String(r["Email"] ?? r["email"] ?? "").trim(),
-          division: String(r["Division"] ?? r["division"] ?? "").trim(),
+          application_number: String(r["Application Number"] ?? r["application_number"] ?? "").trim(),
+          division: "", // not assigned at onboarding stage
           specialization: String(r["Specialization"] ?? r["specialization"] ?? "").trim(),
           gender: String(r["Gender"] ?? r["gender"] ?? "").trim(),
         }));
-        resolve(mapped.filter((r) => r.roll_number && r.email && r.division));
+        resolve(mapped.filter((r) => r.roll_number && r.email));
       } catch (err) {
         reject(err);
       }
@@ -80,6 +89,16 @@ function parseBatchExcel(file: File): Promise<StudentImportRow[]> {
     reader.onerror = reject;
     reader.readAsArrayBuffer(file);
   });
+}
+
+// Generate and download the Excel template
+function downloadTemplate() {
+  const headers = [["Roll Number", "First Name", "Last Name", "Email", "Application Number", "Specialization", "Gender"]];
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(headers);
+  ws["!cols"] = [{ wch: 16 }, { wch: 18 }, { wch: 18 }, { wch: 28 }, { wch: 20 }, { wch: 20 }, { wch: 14 }];
+  XLSX.utils.book_append_sheet(wb, ws, "Students");
+  XLSX.writeFile(wb, "student_import_template.xlsx");
 }
 
 function CreateBatchForm({ onCreated, onCancel }: { onCreated: (batch: Batch) => void; onCancel: () => void }) {
@@ -207,6 +226,7 @@ function StudentOnboardingPanel({ batch }: { batch: Batch }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<StudentImportRow[]>([]);
   const [importing, setImporting] = useState(false);
+  const [specs, setSpecs] = useState<SpecOption[]>([]);
   const readOnly = !batch.is_active;
 
   const [manualForm, setManualForm] = useState({
@@ -214,10 +234,26 @@ function StudentOnboardingPanel({ batch }: { batch: Batch }) {
     first_name: "",
     last_name: "",
     email: "",
-    division: "",
+    application_number: "",
     specialization: "",
     gender: "",
   });
+
+  // Load specializations from t202.
+  // NOTE: t202.batch_id is null for seeded rows because the migration FK referenced
+  // t201_batch(id) which doesn't exist — t201 uses batch_id as PK. To show all
+  // available specs (including seeded ones) we intentionally omit the batch_id filter.
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await (supabase as any)
+        .from("t202_specialization")
+        .select("id, spec_code, spec_name")
+        .eq("is_active", true)
+        .order("spec_name");
+      setSpecs((data ?? []) as SpecOption[]);
+    };
+    load();
+  }, [batch.batch_id]);
 
   const handleFile = async (f: File) => {
     try {
@@ -230,11 +266,7 @@ function StudentOnboardingPanel({ batch }: { batch: Batch }) {
   };
 
   const handleImport = async () => {
-    if (readOnly) {
-      toast.error("Archived batches are read-only.");
-      return;
-    }
-
+    if (readOnly) { toast.error("Archived batches are read-only."); return; }
     if (!preview.length) return;
 
     setImporting(true);
@@ -243,7 +275,6 @@ function StudentOnboardingPanel({ batch }: { batch: Batch }) {
         { batch_id: batch.batch_id, batch_code: batch.batch_code },
         preview,
       );
-
       toast.success(`Imported ${result.inserted} students.${result.failed ? ` ${result.failed} rows skipped.` : ""}`);
       setPreview([]);
     } catch (error: any) {
@@ -255,14 +286,9 @@ function StudentOnboardingPanel({ batch }: { batch: Batch }) {
 
   const addManualStudent = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (readOnly) {
-      toast.error("Archived batches are read-only.");
-      return;
-    }
-
-    if (!manualForm.roll_number || !manualForm.email || !manualForm.division) {
-      toast.error("Roll number, email and division are required.");
+    if (readOnly) { toast.error("Archived batches are read-only."); return; }
+    if (!manualForm.roll_number || !manualForm.email) {
+      toast.error("Roll number and email are required.");
       return;
     }
 
@@ -270,20 +296,12 @@ function StudentOnboardingPanel({ batch }: { batch: Batch }) {
     try {
       const result = await upsertBatchStudents(
         { batch_id: batch.batch_id, batch_code: batch.batch_code },
-        [manualForm],
+        [{ ...manualForm, division: "" }],
       );
 
       if (result.inserted > 0) {
         toast.success("Student added.");
-        setManualForm({
-          roll_number: "",
-          first_name: "",
-          last_name: "",
-          email: "",
-          division: "",
-          specialization: "",
-          gender: "",
-        });
+        setManualForm({ roll_number: "", first_name: "", last_name: "", email: "", application_number: "", specialization: "", gender: "" });
       } else {
         toast.error("Could not add student.");
       }
@@ -295,7 +313,7 @@ function StudentOnboardingPanel({ batch }: { batch: Batch }) {
   };
 
   return (
-    <Tabs value={tab} onValueChange={(v) => setTab(v as "excel" | "manual")}> 
+    <Tabs value={tab} onValueChange={(v) => setTab(v as "excel" | "manual")}>
       <TabsList>
         <TabsTrigger value="excel" className="gap-1.5">
           <FileSpreadsheet className="h-3.5 w-3.5" /> Excel Upload
@@ -306,6 +324,13 @@ function StudentOnboardingPanel({ batch }: { batch: Batch }) {
       </TabsList>
 
       <TabsContent value="excel" className="mt-4 space-y-4">
+        {/* Download Template */}
+        <div className="flex justify-end">
+          <Button type="button" variant="outline" size="sm" className="gap-2" onClick={downloadTemplate}>
+            <Download className="h-3.5 w-3.5" /> Download Template
+          </Button>
+        </div>
+
         <div
           className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
           onClick={() => !readOnly && fileRef.current?.click()}
@@ -314,6 +339,7 @@ function StudentOnboardingPanel({ batch }: { batch: Batch }) {
           <p className="text-sm text-muted-foreground">
             {readOnly ? "Archived batch (read-only)." : "Drop Excel file here or browse"}
           </p>
+          <p className="text-xs text-muted-foreground mt-1">Columns: Roll Number, First Name, Last Name, Email, Application Number, Specialization, Gender</p>
           <input
             ref={fileRef}
             type="file"
@@ -336,6 +362,9 @@ function StudentOnboardingPanel({ batch }: { batch: Batch }) {
       </TabsContent>
 
       <TabsContent value="manual" className="mt-4">
+        <p className="text-xs text-muted-foreground mb-4">
+          Division is assigned later via <strong>Manage Batch → Manage Divisions</strong>.
+        </p>
         <form onSubmit={addManualStudent} className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label>Roll Number *</Label>
@@ -354,14 +383,29 @@ function StudentOnboardingPanel({ batch }: { batch: Batch }) {
             <Input value={manualForm.last_name} onChange={(e) => setManualForm((f) => ({ ...f, last_name: e.target.value }))} />
           </div>
           <div className="space-y-1.5">
-            <Label>Division *</Label>
-            <Input value={manualForm.division} onChange={(e) => setManualForm((f) => ({ ...f, division: e.target.value }))} placeholder="A / Division A" />
+            <Label>Application Number</Label>
+            <Input placeholder="e.g. APP-2024-001" value={manualForm.application_number} onChange={(e) => setManualForm((f) => ({ ...f, application_number: e.target.value }))} />
           </div>
+
           <div className="space-y-1.5">
             <Label>Specialization</Label>
-            <Input value={manualForm.specialization} onChange={(e) => setManualForm((f) => ({ ...f, specialization: e.target.value }))} />
+            {specs.length > 0 ? (
+              <Select value={manualForm.specialization} onValueChange={(v) => setManualForm((f) => ({ ...f, specialization: v }))}>
+                <SelectTrigger><SelectValue placeholder="Select specialization..." /></SelectTrigger>
+                <SelectContent>
+                  {specs.map((s) => <SelectItem key={s.id} value={s.spec_code}>{s.spec_name} ({s.spec_code})</SelectItem>)}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input
+                value={manualForm.specialization}
+                onChange={(e) => setManualForm((f) => ({ ...f, specialization: e.target.value }))}
+                placeholder="No specializations yet — type one"
+              />
+            )}
           </div>
-          <div className="space-y-1.5 sm:col-span-2">
+
+          <div className="space-y-1.5">
             <Label>Gender</Label>
             <Select value={manualForm.gender} onValueChange={(v) => setManualForm((f) => ({ ...f, gender: v }))}>
               <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
@@ -373,6 +417,7 @@ function StudentOnboardingPanel({ batch }: { batch: Batch }) {
               </SelectContent>
             </Select>
           </div>
+
           <div className="sm:col-span-2">
             <Button type="submit" disabled={importing || readOnly} size="sm" className="gap-1.5">
               {importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
@@ -446,7 +491,7 @@ export default function OnboardBatch() {
               </div>
 
               <div className="grid sm:grid-cols-2 gap-6">
-                <Card className="hover:border-primary cursor-pointer transition-colors pt-6" onClick={() => setStep("create")}> 
+                <Card className="hover:border-primary cursor-pointer transition-colors pt-6" onClick={() => setStep("create")}>
                   <CardContent className="text-center space-y-4">
                     <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
                       <Plus className="h-6 w-6 text-primary" />
@@ -547,7 +592,7 @@ export default function OnboardBatch() {
                 </Card>
 
                 <div className="text-center pt-4">
-                  <Button variant="ghost" onClick={() => navigate("/batches")}>Go to Batch Management <ArrowLeft className="h-4 w-4 ml-2 rotate-180" /></Button>
+                  <Button variant="ghost" onClick={() => navigate("/managebatch")}>Go to Batch Management <ArrowLeft className="h-4 w-4 ml-2 rotate-180" /></Button>
                 </div>
               </div>
             </motion.div>

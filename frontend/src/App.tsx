@@ -14,6 +14,8 @@ import OnboardBatch from "./pages/OnboardBatch";
 import BatchDivisionsPage from "./pages/BatchDivisionsPage";
 import BatchStudentsPage from "./pages/BatchStudentsPage";
 import BatchAcadGroupsPage from "./pages/BatchAcadGroupsPage";
+import ManageDivisionsPage from "./pages/ManageDivisionsPage";
+import ManageAcadGroupsPage from "./pages/ManageAcadGroupsPage";
 import ManageCourses from "./pages/ManageCourses";
 import SystemSettings from "./pages/SystemSettings";
 import TimetablePage from "./pages/TimetablePage";
@@ -130,7 +132,7 @@ const App = () => (
                 }
               />
               <Route
-                path="/batches"
+                path="/managebatch"
                 element={
                   <ProtectedRoute>
                     <ModuleRouteGuard tileKey="manage_batch">
@@ -140,27 +142,17 @@ const App = () => (
                 }
               />
               <Route
-                path="/onboard-batch"
+                path="/onboardbatch"
                 element={
                   <ProtectedRoute>
-                    <ModuleRouteGuard tileKey="manage_batch" subtileKey="create_batch">
+                    <ModuleRouteGuard tileKey="onboard_batch">
                       <OnboardBatch />
                     </ModuleRouteGuard>
                   </ProtectedRoute>
                 }
               />
               <Route
-                path="/batches/create"
-                element={
-                  <ProtectedRoute>
-                    <ModuleRouteGuard tileKey="manage_batch" subtileKey="create_batch">
-                      <OnboardBatch />
-                    </ModuleRouteGuard>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/batches/divisions"
+                path="/managebatch/divisions"
                 element={
                   <ProtectedRoute>
                     <ModuleRouteGuard tileKey="manage_batch" subtileKey="manage_divisions">
@@ -170,7 +162,7 @@ const App = () => (
                 }
               />
               <Route
-                path="/batches/students"
+                path="/managebatch/students"
                 element={
                   <ProtectedRoute>
                     <ModuleRouteGuard tileKey="manage_batch" subtileKey="manage_students">
@@ -180,11 +172,31 @@ const App = () => (
                 }
               />
               <Route
-                path="/batches/acad-groups"
+                path="/managebatch/acad-groups"
                 element={
                   <ProtectedRoute>
                     <ModuleRouteGuard tileKey="manage_batch" subtileKey="manage_acad_groups">
                       <BatchAcadGroupsPage />
+                    </ModuleRouteGuard>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/managebatch/manage-divisions"
+                element={
+                  <ProtectedRoute>
+                    <ModuleRouteGuard tileKey="manage_batch" subtileKey="manage_divisions">
+                      <ManageDivisionsPage />
+                    </ModuleRouteGuard>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/managebatch/manage-acad-groups"
+                element={
+                  <ProtectedRoute>
+                    <ModuleRouteGuard tileKey="manage_batch" subtileKey="manage_acad_groups">
+                      <ManageAcadGroupsPage />
                     </ModuleRouteGuard>
                   </ProtectedRoute>
                 }

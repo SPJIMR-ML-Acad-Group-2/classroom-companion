@@ -11,6 +11,7 @@ export interface StudentImportRow {
   last_name: string;
   email: string;
   division: string;
+  application_number?: string;
   specialization?: string;
   gender?: string;
 }
@@ -124,6 +125,7 @@ async function resolveSpecializationId(batch: BatchLite, specialization?: string
   const input = specialization?.trim();
   if (!input) return null;
 
+  // Derive a short code from the input (matches seeded codes like FIN, MKT, OPS)
   const code = input
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "")
@@ -131,25 +133,29 @@ async function resolveSpecializationId(batch: BatchLite, specialization?: string
 
   const name = input;
 
-  const { data: existing, error: findError } = await supabase
+  // NOTE: t202_specialization.batch_id was seeded with a null FK due to t201_batch
+  // using 'batch_id' as PK (not 'id'). To reliably find specs we search only by
+  // spec_code or spec_name — NOT by batch_id.
+  const { data: existing, error: findError } = await (supabase as any)
     .from("t202_specialization")
     .select("id,spec_code,spec_name")
-    .or(`spec_code.ilike.${code},spec_name.ilike.${name}`)
+    .or(`spec_code.ilike.${code},spec_name.ilike.${input}`)
     .limit(1);
 
   if (!findError && existing && existing.length > 0) {
     return (existing[0] as { id: string }).id;
   }
 
+  // Create new specialisation linked to this batch
   const payload: Record<string, string> = {
     spec_code: code,
     spec_name: name,
-    batch_id: batch.batch_code,
+    batch_id: batch.batch_id,
   };
 
-  const { data: created, error: createError } = await supabase
+  const { data: created, error: createError } = await (supabase as any)
     .from("t202_specialization")
-    .upsert(payload as never, { onConflict: "spec_code" })
+    .upsert(payload, { onConflict: "spec_code" })
     .select("id")
     .single();
 
@@ -167,22 +173,33 @@ export async function upsertBatchStudents(
   const cleanedRows = rows.filter((r) => r.roll_number.trim() && r.email.trim());
   if (cleanedRows.length === 0) return { inserted: 0, failed: 0 };
 
-  const divisionMap = await ensureBatchDivisions(
-    batch.batch_id,
-    cleanedRows.map((r) => r.division),
-  );
+  // Only build division map for rows that actually have a division value.
+  // Division is optional at onboarding — it is assigned later via Manage Divisions.
+  const rowsWithDivision = cleanedRows.filter((r) => r.division.trim());
+  const divisionMap =
+    rowsWithDivision.length > 0
+      ? await ensureBatchDivisions(
+        batch.batch_id,
+        rowsWithDivision.map((r) => r.division),
+      )
+      : new Map<string, DivisionRecord>();
 
   const payload: Record<string, unknown>[] = [];
   let failed = 0;
 
   for (const row of cleanedRows) {
-    const divisionKey = row.division.trim().toLowerCase();
-    const divisionCodeKey = normalizeDivisionCode(row.division).toLowerCase();
-    const division = divisionMap.get(divisionKey) ?? divisionMap.get(divisionCodeKey);
-
-    if (!division) {
-      failed += 1;
-      continue;
+    // Division is optional — resolve only if provided.
+    let divisionId: string | null = null;
+    if (row.division.trim()) {
+      const divisionKey = row.division.trim().toLowerCase();
+      const divisionCodeKey = normalizeDivisionCode(row.division).toLowerCase();
+      const division = divisionMap.get(divisionKey) ?? divisionMap.get(divisionCodeKey);
+      if (!division) {
+        // A non-empty division string that couldn't be resolved → skip row
+        failed += 1;
+        continue;
+      }
+      divisionId = division.id;
     }
 
     const specializationId = await resolveSpecializationId(batch, row.specialization);
@@ -192,8 +209,9 @@ export async function upsertBatchStudents(
       first_name: row.first_name.trim() || "NA",
       last_name: row.last_name.trim() || "NA",
       email: row.email.trim().toLowerCase(),
+      application_number: row.application_number?.trim() || null,
       batch_id: batch.batch_id,
-      division_id: division.id,
+      division_id: divisionId,
       specialization_id: specializationId,
       gender: normalizeGender(row.gender),
       is_active: true,
@@ -204,9 +222,9 @@ export async function upsertBatchStudents(
     return { inserted: 0, failed };
   }
 
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("t205_student_profile")
-    .upsert(payload as never[], { onConflict: "roll_number" });
+    .upsert(payload, { onConflict: "roll_number" });
 
   if (error) {
     throw new Error(error.message);

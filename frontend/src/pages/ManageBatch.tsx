@@ -2,7 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchAllowedSubtiles, hasSubtileAccess, normalizeRoleCode, SubtileAccess } from "@/lib/rbac";
+import { fetchAllowedSubtiles, normalizeRoleCode, SubtileAccess } from "@/lib/rbac";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,6 @@ import {
   GraduationCap,
   Loader2,
   LayoutGrid,
-  Plus,
   Users,
   BookOpen,
   Pencil,
@@ -40,7 +39,6 @@ const SUBTILE_ICON_MAP: Record<string, React.ElementType> = {
   users: Users,
   building: LayoutGrid,
   "book-open": BookOpen,
-  plus: Plus,
   pencil: Pencil,
 };
 
@@ -194,16 +192,6 @@ export default function ManageBatch() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
-  const [canCreateBatch, setCanCreateBatch] = useState(false);
-
-  useEffect(() => {
-    const checkCreateAccess = async () => {
-      const allowed = await hasSubtileAccess(roleCode, "manage_batch", "create_batch");
-      setCanCreateBatch(allowed);
-    };
-
-    checkCreateAccess();
-  }, [roleCode]);
 
   const fetchBatches = async () => {
     setLoading(true);
@@ -269,11 +257,7 @@ export default function ManageBatch() {
             </div>
           </div>
 
-          {canCreateBatch ? (
-            <Button size="sm" className="gap-2" onClick={() => navigate("/batches/create")}> 
-              <Plus className="h-4 w-4" /> Create Batch
-            </Button>
-          ) : null}
+
         </div>
       </header>
 

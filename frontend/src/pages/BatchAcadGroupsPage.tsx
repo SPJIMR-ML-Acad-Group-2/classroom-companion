@@ -245,7 +245,7 @@ export default function BatchAcadGroupsPage() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b bg-card/80 backdrop-blur-sm">
         <div className="container flex h-16 items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/batches")} className="gap-2 text-muted-foreground">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/managebatch")} className="gap-2 text-muted-foreground">
             <ArrowLeft className="h-4 w-4" /> Back to Batches
           </Button>
           <div className="h-4 w-px bg-border" />
